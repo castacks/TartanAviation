@@ -1,0 +1,7 @@
+0 6 * * * $HOME/ADS-B/scripts/launch.sh
+0 19 * * * $HOME/ADS-B/scripts/kill_script.sh
+0 2 * * * $HOME/adsb_recorder/launch.sh
+0 23 * * * $HOME/adsb_recorder/kill_script.sh
+0 2 * * * $HOME/adsb_audio_recorder/scripts/launch.sh
+0 23 * * * $HOME/adsb_audio_recorder/scripts/kill_script.sh
+30 * * * * $HOME/slack_space.sh
