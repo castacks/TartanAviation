@@ -48,6 +48,31 @@ def download_file(base_url, save_dir, audio_path):
     else:
         print(f'{audio_path} already exists in {save_dir}')
     # download audio
+        
+def download_raw_folder(base_url, save_dir, audio_path):
+    # get the file name of audio_path
+    audio_dir_path = os.path.join(args.save_dir, os.path.dirname(audio_path))
+    download_file_local = f'{save_dir}/{audio_path}.zip'
+    # Check if folder already exists
+    if not os.path.exists(download_file_local):
+        download_file = f'{base_url}/{audio_path}.zip'
+        
+        # Check if file exists
+        response = requests.head(download_file, allow_redirects=True)
+
+        if response.status_code == 200:
+            # Make directory
+            os.makedirs(audio_dir_path, exist_ok=True)
+
+            # Download zip file to save directory
+            ret = os.system(f'wget -P {audio_dir_path} {download_file}')
+
+            if ret != 0:
+                print(f'Failed to download {audio_path}')
+
+    # Skip download if folder already exists
+    else:
+        print(f'{download_file_local} already exists in {save_dir}')
 
 parser = argparse.ArgumentParser(description='Download TartanAviation Audio Dataset')
 parser.add_argument('--save_dir', type=str, default='./data', help='Directory to save the dataset')
@@ -98,21 +123,26 @@ elif args.option == 'Sample':
     sample_audio_path = 'kbtp/2020/11/11-02-20_audio'
     download_file(base_url, args.save_dir, sample_audio_path)
 elif args.option == 'Raw':
-    audio_path = 'tartanaviation_raw_audio/'
-
-    audio_save_path = os.path.join(args.save_dir, audio_path)
-    # Check if folder already exists
-    download_files = f'{base_url}/{audio_path}'
-
-    # Download zip file to save directory
-    ret = os.system(f'wget -r -np -R index.html -P {args.save_dir} {download_files}')
-
-    # Unzip the downloaded file
-    if ret == 0:
-        print(f'Download {audio_path}')
-    # Exit if download fails
-    elif ret != 0:
-        print(f'Failed to download {audio_path}')
+    raw_audio_paths = ['tartanaviation_raw_audio/kbtp/2020/Sept-Oct',
+                      'tartanaviation_raw_audio/kbtp/2020/Nov-Dec',
+                      'tartanaviation_raw_audio/kbtp/2021/Jan-Feb',
+                      'tartanaviation_raw_audio/kbtp/2021/Mar-Apr',
+                      'tartanaviation_raw_audio/kbtp/2021/Nov-Dec',
+                      'tartanaviation_raw_audio/kbtp/2022/Jan-Feb',
+                      'tartanaviation_raw_audio/kbtp/2022/Mar-Apr',
+                      'tartanaviation_raw_audio/kbtp/2022/May-Jun',
+                      'tartanaviation_raw_audio/kbtp/2022/Jul-Aug',
+                      'tartanaviation_raw_audio/kbtp/2022/Sept-Oct',
+                      'tartanaviation_raw_audio/kagc/2021/Oct-Dec',
+                      'tartanaviation_raw_audio/kagc/2022/Jan-Feb',
+                      'tartanaviation_raw_audio/kagc/2022/Mar-Apr',
+                      'tartanaviation_raw_audio/kagc/2022/May-Jun',
+                      'tartanaviation_raw_audio/kagc/2022/Jul-Aug',
+                      'tartanaviation_raw_audio/kagc/2022/Sept-Oct',
+                      'tartanaviation_raw_audio/kagc/2022/Nov-Dec',
+                      'tartanaviation_raw_audio/kagc/2023/Jan-Feb']
+    for audio_path in raw_audio_paths:
+        download_raw_folder(base_url, args.save_dir, audio_path)
 else:
     print('Invalid option')
 
