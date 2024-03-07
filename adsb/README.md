@@ -56,4 +56,17 @@ python3 download.py --option Raw
 
 The scripts `process.py`  can be used to filter and process the raw data after being uncompressed. 
 
+## Citation
+Please cite the following paper if you find this dataset helpful in your work:
 
+```
+@article{patrikar2024tartanaviation,
+	title={TartanAviation: Image, Speech, and ADS-B Trajectory Datasets for Terminal Airspace Operations}, 
+	author={Jay Patrikar and Joao Dantas and Brady Moon and Milad Hamidi and Sourish Ghosh and Nikhil Keetha and Ian Higgins and Atharva Chandak and Takashi Yoneyama and Sebastian Scherer},
+	year={2024},
+	eprint={2403.03372},
+	archivePrefix={arXiv},
+	primaryClass={cs.LG},
+	url={https://arxiv.org/pdf/2403.03372.pdf}
+}
+```
