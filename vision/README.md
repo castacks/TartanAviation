@@ -4,7 +4,7 @@
 
 This sub-directory contains the scripts to download and process the TartanAviation vision data collected at the KAGC airport. The total size of the downloaded data is 3.3 TB. Post processing, the data size is 22 TB.
 
-For details regarding the dataset, please refer to the [To Do: TartanAviation: ...](./README.md) paper.
+For details regarding the dataset, please refer to the [paper](http://arxiv.org/abs/2403.03372).
 
 ## Download Instructions
 

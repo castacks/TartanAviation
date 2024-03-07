@@ -4,7 +4,7 @@
 
 This directory contains the scripts to download the TartanAviation speech data. The total size of the downloaded data is 2.15 TBs uncompressed and 505.2 GBs compressed. This directory also contains the scripts that were used to filter and analyze the speech data.
 
-For details regarding the dataset, please refer to the [To Do: TartanAviation: ...](./README.md) paper.
+For details regarding the dataset, please refer to the [paper](http://arxiv.org/abs/2403.03372).
 
 ## Download Instructions
 The `download.py` script can be used to seamlessly download the data. For an overview for the available options, please run:
