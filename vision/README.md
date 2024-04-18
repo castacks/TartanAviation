@@ -34,7 +34,9 @@ Please refer to the walkthrough below for more details regarding the download pr
 
 ## Sample Download Walkthrough
 
-To download a sample of the data (1.9 GB), please run the following command:
+To download a sample of the data (1.9 GB compressed, 2.1 GB uncompressed), click on this [link](https://airlab-share.andrew.cmu.edu:8081/tartanaviation/vision/kagc_final/1_2023-02-22-15-21-49.zip).
+
+To download using the script, run the following command:
 
 ```
 python3 download.py --option Sample

@@ -32,7 +32,9 @@ Please refer to the walkthrough below for more details regarding the download pr
 
 ## Sample Download Walkthrough
 
-To download a sample of the data (1.9 GB), please run the following command:
+To download a sample of the data (314 MB compressed, 1.2 GB uncompressed), click on this [link](http://airlab-share.andrew.cmu.edu/tartanaviation/audio/kbtp/2020/11/11-02-20_audio.zip). The sample contains 13 audio files and their corresponding metadata. The audio files are in the `.wav` format and the metadata are in the `.txt` format.
+
+To download using the script, run the following command:
 
 ```
 python3 download.py --option Sample
