@@ -10,65 +10,88 @@ LICENSE file in the root directory of this source tree.
 
 import argparse
 import os
-import requests
+from minio import Minio
+from minio.error import S3Error
+from progress import Progress
 
-def download_file(base_url, save_dir, audio_path):
+def download_file_from_bucket(client, bucket_name, save_dir, audio_path):
     # get the file name of audio_path
     audio_name = os.path.basename(audio_path)
     audio_save_path = os.path.join(args.save_dir, audio_path)
     # Check if folder already exists
     if not os.path.exists(audio_save_path):
-        download_file = f'{base_url}/{audio_path}.zip'
-        
+        download_file = f'{audio_path}.zip'
+        download_dest = f'{save_dir}/{audio_name}.zip'
+
         # Check if file exists
-        response = requests.head(download_file, allow_redirects=True)
+        try:
+            client.stat_object(bucket_name, download_file)
+        except S3Error as err:
+            if err.code == 'NoSuchKey':
+                # print("Object does not exist.")
+                return
+            else:
+                print(f'Failed to lookup {audio_path}')
+                print(f"An error occurred: {err}")
+                return
+        
+        # Make directory
+        os.makedirs(audio_save_path, exist_ok=True)
 
-        if response.status_code == 200:
-            # Make directory
-            os.makedirs(audio_save_path, exist_ok=True)
-
-            # Download zip file to save directory
-            ret = os.system(f'wget -P {save_dir} {download_file}')
-
-            # Unzip the downloaded file
-            if ret == 0:
-                ret = os.system(f'unzip -j {os.path.join(save_dir, audio_name)}.zip -d {audio_save_path}')
-                # Remove the zip file
-                if ret == 0:
-                    os.system(f'rm {os.path.join(save_dir, audio_name)}.zip*')
-                else:
-                    print(f'Please download Unzip (sudo apt install unzip)')
+        # Download zip file to save directory
+        try:
+            client.fget_object(bucket_name, download_file, download_dest, progress=Progress())
+        except S3Error as err:
             # Exit if download fails
-            elif ret != 0:
-                print(f'Failed to download {audio_path}')
-        # else:
-        #     print(f'File {download_file} does not exist on the server.')
+            print(f'Failed to download {audio_path}')
+            print(f"An error occurred: {err}")
+            return
+
+        # Unzip the downloaded file
+        ret = os.system(f'unzip -j {os.path.join(save_dir, audio_name)}.zip -d {audio_save_path}')
+        # Remove the zip file
+        if ret == 0:
+            os.system(f'rm {os.path.join(save_dir, audio_name)}.zip*')
+        else:
+            print(f'Please download Unzip (sudo apt install unzip)')
 
     # Skip download if folder already exists
     else:
         print(f'{audio_path} already exists in {save_dir}')
-    # download audio
-        
-def download_raw_folder(base_url, save_dir, audio_path):
+
+
+def download_raw_folder(client, bucket_name, save_dir, audio_path):
     # get the file name of audio_path
-    audio_dir_path = os.path.join(args.save_dir, os.path.dirname(audio_path))
+    audio_dir_path = os.path.join(save_dir, os.path.dirname(audio_path))
+    audio_name = os.path.basename(audio_path)
     download_file_local = f'{save_dir}/{audio_path}.zip'
     # Check if folder already exists
     if not os.path.exists(download_file_local):
-        download_file = f'{base_url}/{audio_path}.zip'
+        download_file = f'{audio_path}.zip'
+        download_dest = f'{audio_dir_path}/{audio_name}.zip'
         
-        # Check if file exists
-        response = requests.head(download_file, allow_redirects=True)
+        try:
+            stat = client.stat_object(bucket_name, download_file)
+        except S3Error as err:
+            if err.code == 'NoSuchKey':
+                # print("Object does not exist.")
+                return
+            else:
+                print(f'Failed to lookup {audio_path}')
+                print(f"An error occurred: {err}")
+                return
+            
+        # Make directory
+        os.makedirs(audio_dir_path, exist_ok=True)
 
-        if response.status_code == 200:
-            # Make directory
-            os.makedirs(audio_dir_path, exist_ok=True)
-
-            # Download zip file to save directory
-            ret = os.system(f'wget -P {audio_dir_path} {download_file}')
-
-            if ret != 0:
-                print(f'Failed to download {audio_path}')
+        # Download zip file to save directory
+        try:
+            client.fget_object(bucket_name, download_file, download_dest, progress=Progress())
+        except S3Error as err:
+            # Exit if download fails
+            print(f'Failed to download {audio_path}')
+            print(f"An error occurred: {err}")
+            return
 
     # Skip download if folder already exists
     else:
@@ -96,7 +119,11 @@ if not os.path.exists(args.save_dir):
 
 
 # Define Base URL for download
-base_url = "http://airlab-share.andrew.cmu.edu/tartanaviation/audio"
+endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
+bucket_name = "tartanaviation-audio"
+
+client = Minio(endpoint_url,
+                secure=False)
 
 if args.option == 'Date_Range' or args.option == 'All':
     start_date = '2020-09'
@@ -118,31 +145,30 @@ if args.option == 'Date_Range' or args.option == 'All':
             for month in range(start_month, end_month+1):
                 for day in range(1, 32):
                     audio_path = f'{location}/{year}/{month:02d}/{month:02d}-{day:02d}-{str(year)[-2:]}_audio'
-                    download_file(base_url, args.save_dir, audio_path)
+                    download_file_from_bucket(client, bucket_name, args.save_dir, audio_path)
 elif args.option == 'Sample':
     sample_audio_path = 'kbtp/2020/11/11-02-20_audio'
-    download_file(base_url, args.save_dir, sample_audio_path)
+    download_file_from_bucket(client, bucket_name, args.save_dir, sample_audio_path)
 elif args.option == 'Raw':
-    raw_audio_paths = ['tartanaviation_raw_audio/kbtp/2020/Sept-Oct',
-                      'tartanaviation_raw_audio/kbtp/2020/Nov-Dec',
-                      'tartanaviation_raw_audio/kbtp/2021/Jan-Feb',
-                      'tartanaviation_raw_audio/kbtp/2021/Mar-Apr',
-                      'tartanaviation_raw_audio/kbtp/2021/Nov-Dec',
-                      'tartanaviation_raw_audio/kbtp/2022/Jan-Feb',
-                      'tartanaviation_raw_audio/kbtp/2022/Mar-Apr',
-                      'tartanaviation_raw_audio/kbtp/2022/May-Jun',
-                      'tartanaviation_raw_audio/kbtp/2022/Jul-Aug',
-                      'tartanaviation_raw_audio/kbtp/2022/Sept-Oct',
-                      'tartanaviation_raw_audio/kagc/2021/Oct-Dec',
-                      'tartanaviation_raw_audio/kagc/2022/Jan-Feb',
-                      'tartanaviation_raw_audio/kagc/2022/Mar-Apr',
-                      'tartanaviation_raw_audio/kagc/2022/May-Jun',
-                      'tartanaviation_raw_audio/kagc/2022/Jul-Aug',
-                      'tartanaviation_raw_audio/kagc/2022/Sept-Oct',
-                      'tartanaviation_raw_audio/kagc/2022/Nov-Dec',
-                      'tartanaviation_raw_audio/kagc/2023/Jan-Feb']
+    raw_audio_paths = ['Raw/kbtp/2020/Sept-Oct',
+                      'Raw/kbtp/2020/Nov-Dec',
+                      'Raw/kbtp/2021/Jan-Feb',
+                      'Raw/kbtp/2021/Mar-Apr',
+                      'Raw/kbtp/2021/Nov-Dec',
+                      'Raw/kbtp/2022/Jan-Feb',
+                      'Raw/kbtp/2022/Mar-Apr',
+                      'Raw/kbtp/2022/May-Jun',
+                      'Raw/kbtp/2022/Jul-Aug',
+                      'Raw/kbtp/2022/Sept-Oct',
+                      'Raw/kagc/2021/Oct-Dec',
+                      'Raw/kagc/2022/Jan-Feb',
+                      'Raw/kagc/2022/Mar-Apr',
+                      'Raw/kagc/2022/May-Jun',
+                      'Raw/kagc/2022/Jul-Aug',
+                      'Raw/kagc/2022/Sept-Oct',
+                      'Raw/kagc/2022/Nov-Dec',
+                      'Raw/kagc/2023/Jan-Feb']
     for audio_path in raw_audio_paths:
-        download_raw_folder(base_url, args.save_dir, audio_path)
+        download_raw_folder(client, bucket_name, args.save_dir, audio_path)
 else:
     print('Invalid option')
-
