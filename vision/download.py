@@ -2,7 +2,7 @@
 Copyright (c) AirLab Stacks and Carnegie Mellon University.
 All rights reserved.
 
-Author: Nikhil Varma Keetha
+Author: Nikhil Varma Keetha, Brady Moon
 
 This source code is licensed under the license found in the
 LICENSE file in the root directory of this source tree.
@@ -11,7 +11,38 @@ LICENSE file in the root directory of this source tree.
 import argparse
 import csv
 import os
+from minio import Minio
+from minio.error import S3Error
+from progress import Progress
 
+def download_vision_folder(client, bucket_name, save_dir, download_file):
+    # Check if file exists on the bucket
+    try:
+        stat = client.stat_object(bucket_name, download_file)
+    except S3Error as err:
+        if err.code == 'NoSuchKey':
+            print(f"Object {download_file} does not exist.")
+            print(f"An error occurred: {err}")
+            print("Please open a Github Issue.")
+            return 1
+        else:
+            print(f'Failed to lookup {download_file}')
+            print(f"An error occurred: {err}")
+            return 1
+    
+    # Make save directory
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Download zip file to save directory
+    try:
+        client.fget_object(bucket_name, download_file, os.path.join(save_dir, download_file), progress=Progress())
+    except S3Error as err:
+        # Exit if download fails
+        print(f'Failed to download {download_file}')
+        print(f"An error occurred: {err}")
+        return 1
+
+    return 0
 
 parser = argparse.ArgumentParser(description='Download TartanAviation Vision KAGC Dataset')
 parser.add_argument('--save_dir', type=str, default='./data', help='Directory to save the dataset')
@@ -71,26 +102,30 @@ if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir, exist_ok=True)
 
 # Define Base URL for download
-base_url = "http://airlab-share.andrew.cmu.edu/tartanaviation/vision/kagc_final"
+endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
+bucket_name = "tartanaviation-vision"
+
+client = Minio(endpoint_url,
+                secure=False)
 
 # Download video folders using wget
 for folder in video_folders:
     # Check if folder already exists
     if not os.path.exists(os.path.join(args.save_dir, folder)):
-        download_file = f'{base_url}/{folder}.zip'
+        download_file = f'{folder}.zip'
         
         # Remove zip file if it already exists
-        if not os.path.exists(os.path.join(args.save_dir, f'{folder}.zip')):
-            os.system(f'rm {os.path.join(args.save_dir, f"{folder}.zip")}')
+        if os.path.exists(os.path.join(args.save_dir, download_file)):
+            os.system(f'rm {os.path.join(args.save_dir, download_file)}')
         
         # Download zip file to save directory
-        ret = os.system(f'wget -P {args.save_dir} {download_file}')
+        download_fail = download_vision_folder(client, bucket_name, args.save_dir, download_file)
 
         # Unzip the downloaded file
-        if ret == 0:
-            ret = os.system(f'unzip {os.path.join(args.save_dir, folder)}.zip -d {args.save_dir}')
+        if download_fail == 0:
+            unzip_fail = os.system(f'unzip {os.path.join(args.save_dir, folder)}.zip -d {args.save_dir}')
             # Remove the zip file
-            if ret == 0:
+            if unzip_fail == 0:
                 os.system(f'rm {os.path.join(args.save_dir, folder)}.zip*')
                 # Unzip the labels zip file
                 os.system(f'unzip {os.path.join(args.save_dir, folder, f"{folder}_labels.zip")} -d {os.path.join(args.save_dir, folder)}')
@@ -98,7 +133,7 @@ for folder in video_folders:
                 print(f'Please download Unzip')
                 break
         # Exit if download fails
-        elif ret != 0:
+        elif download_fail != 0:
             print(f'Failed to download {folder}')
             break
     # Skip download if folder already exists
@@ -115,6 +150,7 @@ for folder in video_folders:
             os.makedirs(frame_save_dir, exist_ok=True)
             ret = os.system(f'ffmpeg -i {video_path} -vf "fps=24" -start_number 2 {os.path.join(frame_save_dir, "%d.png")}')
             if ret != 0:
+                print(f'Failed to extract frames from {video_path}')
                 break
 
     # Check if visualization folder already exists
@@ -126,4 +162,5 @@ for folder in video_folders:
             os.makedirs(frame_save_dir, exist_ok=True)
             ret = os.system(f'ffmpeg -i {video_path} -vf "fps=24" -start_number 2 {os.path.join(frame_save_dir, "%d.png")}')
             if ret != 0:
+                print(f'Failed to extract label visualization frames from {video_path}')
                 break
