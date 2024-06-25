@@ -7,6 +7,10 @@ This directory contains the scripts to download the TartanAviation speech data. 
 For details regarding the dataset, please refer to the [paper](http://arxiv.org/abs/2403.03372).
 
 ## Download Instructions
+Install MinIO
+```
+pip install minio
+```
 The `download.py` script can be used to seamlessly download the data. For an overview for the available options, please run:
 
 ```
