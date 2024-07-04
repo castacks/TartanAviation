@@ -115,6 +115,7 @@ if args.option == 'Date_Range':
 
 # Create Save Directory
 if not os.path.exists(args.save_dir):
+    print("Creating save dir at",args.save_dir)
     os.makedirs(args.save_dir, exist_ok=True)
 
 

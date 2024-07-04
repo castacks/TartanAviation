@@ -57,7 +57,7 @@ class Progress(Thread):
     def __init__(self, interval=1, stdout=sys.stdout):
         Thread.__init__(self)
         self.daemon = True
-        self.total_length = 0
+        self.total_length = 1e-6
         self.interval = interval
         self.object_name = None
 
@@ -120,7 +120,7 @@ class Progress(Thread):
         self.display_queue.put((self.current_size, self.total_length))
 
     def done_progress(self):
-        self.total_length = 0
+        self.total_length = 1e-6
         self.object_name = None
         self.last_printed_len = 0
         self.current_size = 0
