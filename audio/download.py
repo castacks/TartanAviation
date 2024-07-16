@@ -124,7 +124,7 @@ endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
 bucket_name = "tartanaviation-audio"
 
 client = Minio(endpoint_url,
-                secure=False)
+                secure=True)
 
 if args.option == 'Date_Range' or args.option == 'All':
     start_date = '2020-09'
@@ -173,3 +173,4 @@ elif args.option == 'Raw':
         download_raw_folder(client, bucket_name, args.save_dir, audio_path)
 else:
     print('Invalid option')
+print("Done!")

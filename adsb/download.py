@@ -116,7 +116,7 @@ if not os.path.exists(args.save_dir):
 endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
 bucket_name = "tartanaviation-adsb"
 
-client = Minio(endpoint_url, secure=False)
+client = Minio(endpoint_url, secure=True)
 
 # Go through each location
 if args.location == 'Both':
