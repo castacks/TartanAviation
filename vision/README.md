@@ -8,12 +8,12 @@ For details regarding the dataset, please refer to the [paper](http://arxiv.org/
 
 ## Download Instructions
 Install MinIO
-```
+```sh
 pip install minio
 ```
 The `download.py` script can be used to seamlessly download the data. For an overview for the available options, please run:
 
-```
+```sh
 python3 download.py --help
 ```
 
@@ -41,7 +41,7 @@ To download a sample of the data (1.9 GB compressed, 2.1 GB uncompressed), click
 
 To download using the script, run the following command:
 
-```
+```sh
 python3 download.py --option Sample
 ```
 

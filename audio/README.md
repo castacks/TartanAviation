@@ -8,12 +8,12 @@ For details regarding the dataset, please refer to the [paper](http://arxiv.org/
 
 ## Download Instructions
 Install MinIO
-```
+```sh
 pip install minio
 ```
 The `download.py` script can be used to seamlessly download the data. For an overview for the available options, please run:
 
-```
+```sh
 python3 download.py --help
 ```
 
@@ -65,7 +65,7 @@ The script will download the data by default to the `./data` directory. The exam
 
 The raw data can be downloaded by running the following command:
 
-```
+```sh
 python3 download.py --option Raw
 ```
 This will download the 630 GB compressed files.
