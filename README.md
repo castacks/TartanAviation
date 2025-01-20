@@ -1,6 +1,8 @@
 
 # TartanAviation: Vision, Speech, and ADS-B Trajectory Datasets for Terminal Airspace Operations
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14699102.svg)](https://doi.org/10.5281/zenodo.14699102)
+
 [Paper Link](http://arxiv.org/abs/2403.03372) | [Website Link](https://theairlab.org/tartanaviation/)
 <p align="center">
   <a href="">
