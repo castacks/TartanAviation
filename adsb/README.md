@@ -34,7 +34,7 @@ Please refer to the walkthrough below for more details regarding the download pr
 
 ## Sample Download Walkthrough
 
-To download a sample of the data (733 Mb compressed, 3.4 GB uncompressed), click on this [link](http://airlab-share.andrew.cmu.edu/tartanaviation/trajectory/kbtp/raw/2022.zip):
+To download a sample of the data (733 Mb compressed, 3.4 GB uncompressed), click on this [link](https://airlab-share-01.andrew.cmu.edu:9000/tartanaviation-adsb/kbtp/raw/2022.zip):
 
 To download using the script, run the following command:
 
