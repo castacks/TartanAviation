@@ -102,7 +102,7 @@ if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir, exist_ok=True)
 
 # Define Base URL for download
-endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
+endpoint_url = "airlab-share-02.andrew.cmu.edu:9000"
 bucket_name = "tartanaviation-vision"
 
 client = Minio(endpoint_url,
