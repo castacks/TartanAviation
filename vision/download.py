@@ -102,11 +102,12 @@ if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir, exist_ok=True)
 
 # Define Base URL for download
-endpoint_url = "airlab-share-02.andrew.cmu.edu:9000"
+endpoint_url = "airlab-cloud.andrew.cmu.edu:8080"
+access_key = "9d6f8aab81c14f75b6d027b392cb7c93"   
+secret_key = "43b98da5d8ae4704a09a957b73615746"
 bucket_name = "tartanaviation-vision"
 
-client = Minio(endpoint_url,
-                secure=True)
+client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
 
 # Download video folders using wget
 for folder in video_folders:
