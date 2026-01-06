@@ -7,7 +7,9 @@ This directory contains the scripts to download the TartanAviation ADS-B data. T
 For details regarding the dataset, please refer to the [paper](http://arxiv.org/abs/2403.03372).
 
 ## Download Instructions
+
 Install MinIO
+
 ```sh
 pip install minio requests
 ```
@@ -34,7 +36,7 @@ Please refer to the walkthrough below for more details regarding the download pr
 
 ## Sample Download Walkthrough
 
-To download a sample of the data (733 Mb compressed, 3.4 GB uncompressed), click on this [link](https://airlab-share-02.andrew.cmu.edu:9000/tartanaviation-adsb/kbtp/raw/2022.zip):
+To download a sample of the data (733 Mb compressed, 3.4 GB uncompressed), click on this [link](https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kbtp/raw/2022.zip):
 
 To download using the script, run the following command:
 
@@ -47,7 +49,7 @@ The script will download the data by default to the `./data` directory. The exam
 ```
 ./data
 └── kbtp
-    └── raw  
+    └── raw
         └── 2022
             └── 11-02-20
                     ├── 1.csv
@@ -61,14 +63,15 @@ The raw data can be downloaded by running the following command:
 python3 download.py --option Raw
 ```
 
-The scripts `process.py`  can be used to filter and process the raw data after being uncompressed. 
+The scripts `process.py` can be used to filter and process the raw data after being uncompressed.
 
 ## Citation
+
 Please cite the following paper if you find this dataset helpful in your work:
 
 ```
 @article{patrikar2024tartanaviation,
-	title={TartanAviation: Image, Speech, and ADS-B Trajectory Datasets for Terminal Airspace Operations}, 
+	title={TartanAviation: Image, Speech, and ADS-B Trajectory Datasets for Terminal Airspace Operations},
 	author={Jay Patrikar and Joao Dantas and Brady Moon and Milad Hamidi and Sourish Ghosh and Nikhil Keetha and Ian Higgins and Atharva Chandak and Takashi Yoneyama and Sebastian Scherer},
 	year={2024},
 	eprint={2403.03372},
