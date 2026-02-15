@@ -10,9 +10,10 @@ LICENSE file in the root directory of this source tree.
 
 import argparse
 import os
-from minio import Minio
-from minio.error import S3Error
-from progress import Progress
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
 def download_file_from_bucket(client, bucket_name, save_dir, audio_path):
     # get the file name of audio_path
@@ -25,9 +26,11 @@ def download_file_from_bucket(client, bucket_name, save_dir, audio_path):
 
         # Check if file exists
         try:
-            client.stat_object(bucket_name, download_file)
-        except S3Error as err:
-            if err.code == 'NoSuchKey':
+            client.head_object(Bucket=bucket_name, Key=download_file)
+        except ClientError as err:
+            code = err.response.get("Error", {}).get("Code", "")
+            # Common "not found" codes across S3-compatible backends
+            if code in ("404", "NoSuchKey", "NotFound"):
                 # print("Object does not exist.")
                 return
             else:
@@ -40,8 +43,12 @@ def download_file_from_bucket(client, bucket_name, save_dir, audio_path):
 
         # Download zip file to save directory
         try:
-            client.fget_object(bucket_name, download_file, download_dest, progress=Progress())
-        except S3Error as err:
+            response = client.get_object(Bucket=bucket_name, Key=download_file)
+            with open(download_dest, 'wb') as f:
+                for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
+        except ClientError as err:
             # Exit if download fails
             print(f'Failed to download {audio_path}')
             print(f"An error occurred: {err}")
@@ -71,9 +78,9 @@ def download_raw_folder(client, bucket_name, save_dir, audio_path):
         download_dest = f'{audio_dir_path}/{audio_name}.zip'
         
         try:
-            stat = client.stat_object(bucket_name, download_file)
-        except S3Error as err:
-            if err.code == 'NoSuchKey':
+            stat = client.head_object(Bucket=bucket_name, Key=download_file)
+        except ClientError as err:
+            if err.response.get("Error", {}).get("Code", "") == "NoSuchKey":
                 # print("Object does not exist.")
                 return
             else:
@@ -86,8 +93,12 @@ def download_raw_folder(client, bucket_name, save_dir, audio_path):
 
         # Download zip file to save directory
         try:
-            client.fget_object(bucket_name, download_file, download_dest, progress=Progress())
-        except S3Error as err:
+            response = client.get_object(Bucket=bucket_name, Key=download_file)
+            with open(download_dest, 'wb') as f:
+                for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
+        except ClientError as err:
             # Exit if download fails
             print(f'Failed to download {audio_path}')
             print(f"An error occurred: {err}")
@@ -120,12 +131,10 @@ if not os.path.exists(args.save_dir):
 
 
 # Define Base URL for download
-endpoint_url = "airlab-cloud.andrew.cmu.edu:8080"
-access_key = "9d6f8aab81c14f75b6d027b392cb7c93"   
-secret_key = "43b98da5d8ae4704a09a957b73615746"  
+endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"  
 bucket_name = "tartanaviation-audio"
 
-client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
+client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
 
 if args.option == 'Date_Range' or args.option == 'All':
     start_date = '2020-09'
