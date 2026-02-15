@@ -11,16 +11,17 @@ LICENSE file in the root directory of this source tree.
 import argparse
 import csv
 import os
-from minio import Minio
-from minio.error import S3Error
-from progress import Progress
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
 def download_vision_folder(client, bucket_name, save_dir, download_file):
     # Check if file exists on the bucket
     try:
-        stat = client.stat_object(bucket_name, download_file)
-    except S3Error as err:
-        if err.code == 'NoSuchKey':
+        stat = client.head_object(Bucket=bucket_name, Key=download_file)
+    except ClientError as err:
+        if err.response.get("Error", {}).get("Code", "") == "NoSuchKey":
             print(f"Object {download_file} does not exist.")
             print(f"An error occurred: {err}")
             print("Please open a Github Issue.")
@@ -35,8 +36,12 @@ def download_vision_folder(client, bucket_name, save_dir, download_file):
 
     # Download zip file to save directory
     try:
-        client.fget_object(bucket_name, download_file, os.path.join(save_dir, download_file), progress=Progress())
-    except S3Error as err:
+        response = client.get_object(Bucket=bucket_name, Key=download_file)
+        with open(os.path.join(save_dir, download_file), 'wb') as f:
+            for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+    except ClientError as err:
         # Exit if download fails
         print(f'Failed to download {download_file}')
         print(f"An error occurred: {err}")
@@ -102,12 +107,10 @@ if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir, exist_ok=True)
 
 # Define Base URL for download
-endpoint_url = "airlab-cloud.andrew.cmu.edu:8080"
-access_key = "9d6f8aab81c14f75b6d027b392cb7c93"   
-secret_key = "43b98da5d8ae4704a09a957b73615746"
+endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"  
 bucket_name = "tartanaviation-vision"
 
-client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
+client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
 
 # Download video folders using wget
 for folder in video_folders:

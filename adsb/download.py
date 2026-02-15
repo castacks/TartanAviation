@@ -9,9 +9,10 @@ LICENSE file in the root directory of this source tree.
 import argparse
 import os
 import requests
-from minio import Minio
-from minio.error import S3Error
-from progress import Progress
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
 def download_file(base_url, save_dir, adsb_path, unzip=False):
     # get the file name of adsb_path
@@ -62,13 +63,14 @@ def download_file_from_bucket(client, bucket_name, save_dir, adsb_path,unzip=Fal
 
         # Check if file exists
         try:
-            client.stat_object(bucket_name, download_file)
-        except S3Error as err:
-            if err.code == 'NoSuchKey':
-                # print("Object does not exist.")
-                return
+            client.head_object(Bucket=bucket_name, Key=download_file)
+        except ClientError as err:
+            code = err.response.get("Error", {}).get("Code", "")
+            # Common "not found" codes across S3-compatible backends
+            if code in ("404", "NoSuchKey", "NotFound"):
+                return  # object does not exist
             else:
-                print(f'Failed to lookup {adsb_path}')
+                print(f"Failed to lookup {adsb_path or download_file}")
                 print(f"An error occurred: {err}")
                 return
         
@@ -78,8 +80,12 @@ def download_file_from_bucket(client, bucket_name, save_dir, adsb_path,unzip=Fal
         # Download zip file to save directory
         try:
             print("\n","Downloading ",download_file," to ",download_dest)
-            client.fget_object(bucket_name, download_file, download_dest, progress=Progress())
-        except S3Error as err:
+            response = client.get_object(Bucket=bucket_name, Key=download_file)
+            with open(download_dest, 'wb') as f:
+                for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
+        except ClientError as err:
             # Exit if download fails
             print(f'Failed to download {adsb_path}')
             print(f"An error occurred: {err}")
@@ -113,12 +119,10 @@ if not os.path.exists(args.save_dir):
 
 
 # Define Base URL for download
-endpoint_url = "airlab-cloud.andrew.cmu.edu:8080"    
-access_key = "9d6f8aab81c14f75b6d027b392cb7c93"   
-secret_key = "43b98da5d8ae4704a09a957b73615746"    
+endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"  
 bucket_name = "tartanaviation-adsb"
 
-client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
+client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
 
 # Go through each location
 if args.location == 'Both':
