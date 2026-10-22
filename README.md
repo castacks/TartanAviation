@@ -22,7 +22,7 @@ Collection ran from 2020 to 2023, across seasons, weather and traffic conditions
 
 | Modality | What you get | Airports | Download size |
 |---|---|---|---|
-| 🎥 [**Vision**](#vision) | ~3.1M images in 550 videos, with aircraft bounding boxes labelled with flight ID, range and aircraft type; synchronized ADS-B; per-video weather | KAGC | 3.5 TB |
+| 🎥 [**Vision**](#vision) | ~3.1M images in 550 videos, with aircraft bounding boxes tied to each aircraft's ICAO address, range and type; synchronized ADS-B; per-video weather | KAGC | 3.5 TB |
 | 🎙️ [**Speech**](#speech) | ~3,374 hours of ATC radio in 677 daily archives, with per-clip metadata; raw recordings also available | KAGC, KBTP | 543 GB, plus 676 GB raw |
 | ✈️ [**ADS-B**](#ads-b) | 661 days of aircraft trajectories, raw and processed | KAGC, KBTP | 2 GB |
 | 🌦️ [**Weather**](#weather) | METAR reports for 2020 to 2022 | KAGC, KBTP | in repo |
@@ -88,13 +88,13 @@ data/
     │   ├── 2.png, 3.png, ...                     frames (--extract_frames)
     │   └── <n>.label                             bounding boxes for frame n
     ├── 1_2023-02-22-15-21-49_sink_verified.avi   video with labels drawn on
-    ├── 1_2023-02-22-15-21-49_sink_adsb.pkl       ADS-B synchronized to the video
-    ├── 1_2023-02-22-15-21-49_acft_sink.pkl
+    ├── 1_2023-02-22-15-21-49_sink_adsb.pkl       {icao24: ADS-B track} synchronized to the video
+    ├── 1_2023-02-22-15-21-49_acft_sink.pkl       {frame: {icao24: (icao24, box, aircraft type)}}
     ├── 1_2023-02-22-15-21-49_subtitle.srt
     └── 1_2023-02-22-15-21-49_labels.zip          the .label files, as downloaded
 ```
 
-Each line of a `.label` file is `x1 y1 x2 y2 flight_id distance manufacturer model type`.
+Each line of a `.label` file is `x1 y1 x2 y2 index distance manufacturer model type`, where `index` numbers the aircraft within that frame. The aircraft's ICAO 24-bit address, which stays the same across videos, is the key in the two `.pkl` files. Both pickles hold only plain dicts and NumPy scalars.
 
 **PyTorch dataloader:** [`vision/dataloader.py`](vision/dataloader.py) provides `KAGC`, a `torch.utils.data.Dataset` that yields sequences of grayscale frames with their boxes and metadata. Run `--extract_frames` first.
 

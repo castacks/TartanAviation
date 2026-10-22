@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use TartanAviation, please cite the paper below."
+title: "TartanAviation"
+type: dataset
+version: "1.1"
+url: "https://theairlab.org/tartanaviation/"
+repository-code: "https://github.com/castacks/TartanAviation"
+license: CC-BY-4.0
+authors: &authors
+  - family-names: Patrikar
+    given-names: Jay
+  - family-names: Dantas
+    given-names: Joao
+  - family-names: Moon
+    given-names: Brady
+  - family-names: Hamidi
+    given-names: Milad
+  - family-names: Ghosh
+    given-names: Sourish
+  - family-names: Keetha
+    given-names: Nikhil
+  - family-names: Higgins
+    given-names: Ian
+  - family-names: Chandak
+    given-names: Atharva
+  - family-names: Yoneyama
+    given-names: Takashi
+  - family-names: Scherer
+    given-names: Sebastian
+    email: basti@andrew.cmu.edu
+preferred-citation:
+  type: article
+  title: "Image, speech, and ADS-B trajectory datasets for terminal airspace operations"
+  authors: *authors
+  journal: "Scientific Data"
+  volume: 12
+  issue: 1
+  start: 468
+  year: 2025
+  month: 3
+  doi: "10.1038/s41597-025-04775-6"
