@@ -10,7 +10,9 @@
 [![Code license](https://img.shields.io/badge/code-BSD--3--Clause-lightgrey)](LICENSE)
 
 <p align="center">
-  <img src="abstract.png" alt="TartanAviation overview" width="100%">
+  <img src="assets/kagc_pc12.webp" alt="A Pilatus PC-12 departing KAGC, boxed and identified from its ADS-B broadcast" width="100%">
+  <br>
+  <sub>A Pilatus PC-12 departs KAGC. The box, range (0.36 nm) and aircraft type all come from the aircraft's own ADS-B broadcast. Sample video <code>1_2023-02-22-15-21-49</code>.</sub>
 </p>
 
 TartanAviation is an open, multi-modal dataset of terminal-area airspace operations, recorded with sensors installed inside the boundaries of two airports near Pittsburgh, PA:
@@ -26,6 +28,32 @@ Collection ran from 2020 to 2023, across seasons, weather and traffic conditions
 | 🎙️ [**Speech**](#speech) | ~3,374 hours of ATC radio in 677 daily archives, with per-clip metadata; raw recordings also available | KAGC, KBTP | 543 GB, plus 676 GB raw |
 | ✈️ [**ADS-B**](#ads-b) | 661 days of aircraft trajectories, raw and processed | KAGC, KBTP | 2 GB |
 | 🌦️ [**Weather**](#weather) | METAR reports for 2020 to 2022 | KAGC, KBTP | in repo |
+
+<p align="center">
+  <img src="abstract.png" alt="TartanAviation overview" width="100%">
+</p>
+
+### By the numbers
+
+- 🛩️ **239 aircraft** are labelled in the vision set: 129 multi-engine, 74 single-engine, and 36 helicopters.
+- 🔁 **72 of them appear in more than one video**. One was filmed 64 times across 6 days, so there's plenty for re-identification.
+- 📦 **888,382 bounding boxes**, each tied to the aircraft's ICAO address.
+- 🏭 The most common manufacturer is Cessna (39 aircraft), followed by Piper (20), Eurocopter (17) and Boeing (17).
+- ❄️ Every snow video and every video with visibility of 2 miles or less comes from a single morning: 18 November 2022.
+
+### Where
+
+```geojson
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "properties": {"name": "KAGC: Allegheny County Airport", "description": "Towered. Vision, speech, ADS-B."},
+     "geometry": {"type": "Point", "coordinates": [-79.9217, 40.3547]}},
+    {"type": "Feature", "properties": {"name": "KBTP: Pittsburgh-Butler Regional Airport", "description": "Non-towered. Speech, ADS-B."},
+     "geometry": {"type": "Point", "coordinates": [-79.9497, 40.7769]}}
+  ]
+}
+```
 
 **Contents:** [Quick start](#quick-start) · [Vision](#vision) · [Speech](#speech) · [ADS-B](#ads-b) · [Weather](#weather) · [Repository layout](#repository-layout) · [Contact](#contact) · [Citation](#citation) · [License](#license)
 
