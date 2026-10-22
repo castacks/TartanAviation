@@ -1,0 +1,30 @@
+# Weekly check that the data server is reachable and every file the download
+# scripts expect is still there. Dry runs only: nothing is downloaded.
+name: Check downloads
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Mondays 12:00 UTC
+  workflow_dispatch:
+  push:
+    paths: ['ta_download.py', '*/download.py', 'vision/weather_stats.csv']
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+      - name: ADS-B
+        run: python adsb/download.py --option All --dry_run
+      - name: Audio
+        run: |
+          # Fail if any daily or raw archive has gone missing
+          python audio/download.py --option All --dry_run | tee all.log | tail -2
+          grep -q '^677 file(s)' all.log
+          python audio/download.py --option Raw --dry_run | tee raw.log | tail -2
+          grep -q '^18 file(s)' raw.log
+      - name: Vision
+        run: python vision/download.py --option All --dry_run | tail -2
