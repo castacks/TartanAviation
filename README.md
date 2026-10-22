@@ -5,7 +5,7 @@
 [![Paper](https://img.shields.io/badge/Scientific%20Data-2025-1f6feb)](https://doi.org/10.1038/s41597-025-04775-6)
 [![arXiv](https://img.shields.io/badge/arXiv-2403.03372-b31b1b)](https://arxiv.org/abs/2403.03372)
 [![Website](https://img.shields.io/badge/website-theairlab.org-2ea44f)](https://theairlab.org/tartanaviation/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14699102.svg)](https://doi.org/10.5281/zenodo.14699102)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14699101.svg)](https://doi.org/10.5281/zenodo.14699101)
 [![Data license](https://img.shields.io/badge/data-CC%20BY%204.0-ef9421)](https://creativecommons.org/licenses/by/4.0/)
 [![Code license](https://img.shields.io/badge/code-BSD--3--Clause-lightgrey)](LICENSE)
 
