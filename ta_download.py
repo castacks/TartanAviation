@@ -38,8 +38,16 @@ def list_objects(bucket, prefix=''):
     objects, marker = {}, ''
     while True:
         query = urllib.parse.urlencode({'format': 'json', 'prefix': prefix, 'marker': marker, 'limit': 10000})
-        with urllib.request.urlopen(f'{BASE_URL}/{bucket}/?{query}', timeout=60) as resp:
-            page = json.load(resp)
+        for attempt in range(1, RETRIES + 1):
+            try:
+                with urllib.request.urlopen(f'{BASE_URL}/{bucket}/?{query}', timeout=60) as resp:
+                    page = json.load(resp)
+                break
+            except (urllib.error.URLError, OSError) as err:
+                if attempt == RETRIES:
+                    sys.exit(f'Could not list {bucket} at {BASE_URL} ({err}). Check your connection, '
+                             f'or open an issue at https://github.com/castacks/TartanAviation/issues')
+                time.sleep(min(2 ** attempt, 30))
         if not page:
             return objects
         for obj in page:
