@@ -76,6 +76,8 @@ Every script supports the following:
 - **Resuming:** rerun the same command after an interruption and it skips finished files and resumes partial ones.
 - **`--save_dir DIR`** sets the download location. The default is `./data`.
 
+For tooling, [`croissant.json`](croissant.json) describes the dataset in the [Croissant](https://mlcommons.org/croissant/) format. It covers the per-video metadata, the weather files and the ADS-B archives with SHA-256 checksums, and loads with `mlcroissant`.
+
 A few archives use Deflate64, which Python can't decompress; the scripts extract those with the system `unzip` (`sudo apt install unzip`). The analysis code (`adsb/process.py`, `vision/dataloader.py`) has its own dependencies, listed in [`requirements.txt`](requirements.txt).
 
 ---
@@ -219,6 +221,7 @@ audio/           download script, filter/analysis scripts, radio recorder
 adsb/            download script, trajectory processing, ADS-B recorder
 weather/         METAR CSVs for KAGC and KBTP
 ta_download.py   shared download helper used by the three download.py scripts
+croissant.json   Croissant (MLCommons) metadata: files, checksums and columns
 ```
 
 Each modality's `recording/` folder holds the code that ran on the sensors at the airports.

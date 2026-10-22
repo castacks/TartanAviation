@@ -1,0 +1,569 @@
+{
+  "@context": {
+    "@language": "en",
+    "@vocab": "https://schema.org/",
+    "citeAs": "cr:citeAs",
+    "column": "cr:column",
+    "conformsTo": "dct:conformsTo",
+    "cr": "http://mlcommons.org/croissant/",
+    "rai": "http://mlcommons.org/croissant/RAI/",
+    "samplingRate": "cr:samplingRate",
+    "equivalentProperty": "cr:equivalentProperty",
+    "data": {
+      "@id": "cr:data",
+      "@type": "@json"
+    },
+    "dataType": {
+      "@id": "cr:dataType",
+      "@type": "@vocab"
+    },
+    "dct": "http://purl.org/dc/terms/",
+    "examples": {
+      "@id": "cr:examples",
+      "@type": "@json"
+    },
+    "extract": "cr:extract",
+    "field": "cr:field",
+    "fileProperty": "cr:fileProperty",
+    "fileObject": "cr:fileObject",
+    "fileSet": "cr:fileSet",
+    "format": "cr:format",
+    "includes": "cr:includes",
+    "isLiveDataset": "cr:isLiveDataset",
+    "jsonPath": "cr:jsonPath",
+    "key": "cr:key",
+    "md5": "cr:md5",
+    "parentField": "cr:parentField",
+    "path": "cr:path",
+    "recordSet": "cr:recordSet",
+    "references": "cr:references",
+    "regex": "cr:regex",
+    "repeated": "cr:repeated",
+    "replace": "cr:replace",
+    "sc": "https://schema.org/",
+    "separator": "cr:separator",
+    "source": "cr:source",
+    "subField": "cr:subField",
+    "transform": "cr:transform"
+  },
+  "@type": "sc:Dataset",
+  "conformsTo": "http://mlcommons.org/croissant/1.0",
+  "name": "TartanAviation",
+  "description": "Multi-modal dataset of terminal-area airspace operations recorded at KAGC (towered) and KBTP (non-towered) near Pittsburgh, PA, 2020-2023: ~3.1M images in 550 videos with aircraft bounding boxes tied to ADS-B, ~3,374 hours of ATC speech, and 661 days of ADS-B trajectories. This description covers the per-video metadata, weather, and ADS-B archives; the vision (3.5 TB) and speech (1.2 TB) archives are fetched with the download scripts in the repository.",
+  "url": "https://github.com/castacks/TartanAviation",
+  "sameAs": "https://theairlab.org/tartanaviation/",
+  "license": "https://creativecommons.org/licenses/by/4.0/",
+  "version": "1.1.0",
+  "datePublished": "2025-03-20",
+  "keywords": [
+    "aviation",
+    "ADS-B",
+    "air traffic control",
+    "speech recognition",
+    "object detection",
+    "trajectory prediction",
+    "aircraft"
+  ],
+  "creator": [
+    {
+      "@type": "sc:Person",
+      "name": "Jay Patrikar"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Joao Dantas"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Brady Moon"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Milad Hamidi"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Sourish Ghosh"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Nikhil Keetha"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Ian Higgins"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Atharva Chandak"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Takashi Yoneyama"
+    },
+    {
+      "@type": "sc:Person",
+      "name": "Sebastian Scherer"
+    }
+  ],
+  "publisher": {
+    "@type": "sc:Organization",
+    "name": "AirLab, Carnegie Mellon University",
+    "url": "https://theairlab.org"
+  },
+  "citeAs": "@article{patrikar2025tartanaviation, title={Image, speech, and {ADS-B} trajectory datasets for terminal airspace operations}, author={Patrikar, Jay and Dantas, Joao and Moon, Brady and Hamidi, Milad and Ghosh, Sourish and Keetha, Nikhil and Higgins, Ian and Chandak, Atharva and Yoneyama, Takashi and Scherer, Sebastian}, journal={Scientific Data}, volume={12}, number={1}, pages={468}, year={2025}, doi={10.1038/s41597-025-04775-6}}",
+  "distribution": [
+    {
+      "@type": "cr:FileObject",
+      "@id": "vision-weather-stats",
+      "name": "weather_stats.csv",
+      "description": "One row per vision video: aircraft count and weather. The video itself is https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-vision/<video_name>.zip",
+      "contentUrl": "https://raw.githubusercontent.com/castacks/TartanAviation/1.1/vision/weather_stats.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "84c5b4e8e9ae553386cb4e484bd829d0b81a033f881547bdee91ea1b9a76fbf7"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "weather-agc",
+      "name": "AGC.csv",
+      "description": "METAR reports for KAGC, 2020-2022, from the Iowa Environmental Mesonet ASOS export.",
+      "contentUrl": "https://raw.githubusercontent.com/castacks/TartanAviation/1.1/weather/AGC.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "e3a6f6f549c86430f05e48f4f8aa94c54f7efd510c74f705e104172442c8fae1"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "weather-btp",
+      "name": "BTP.csv",
+      "description": "METAR reports for KBTP, 2020-2022, from the Iowa Environmental Mesonet ASOS export.",
+      "contentUrl": "https://raw.githubusercontent.com/castacks/TartanAviation/1.1/weather/BTP.csv",
+      "encodingFormat": "text/csv",
+      "sha256": "ebec923b67fcd5dd237449be6c46f934d82f41580f1678ac4e4272503c6f58aa"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kbtp-processed",
+      "name": "kbtp/processed.zip",
+      "description": "Processed trajectories at KBTP.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kbtp/processed.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "f131e41ddeb7dc2fcc8f28f654dcc33c9129a2ac44cb82475e1473fc1670891e",
+      "contentSize": "345448048 B"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kbtp-raw-2020",
+      "name": "kbtp/raw/2020.zip",
+      "description": "Raw ADS-B for 2020 at KBTP.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kbtp/raw/2020.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "5a072f0fda600eb2032da463faac7cb8cddf1d09f851e1f52234baeae65d1d36",
+      "contentSize": "118589578 B"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kbtp-raw-2021",
+      "name": "kbtp/raw/2021.zip",
+      "description": "Raw ADS-B for 2021 at KBTP.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kbtp/raw/2021.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "bffd4027854435cff58f6147d6abb8f31ee6ef3809d0ecaa3734d65f121b13ed",
+      "contentSize": "234169782 B"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kbtp-raw-2022",
+      "name": "kbtp/raw/2022.zip",
+      "description": "Raw ADS-B for 2022 at KBTP.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kbtp/raw/2022.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "668d753a7f105f3026f07faef8ca5426a357256701b387fa970cd4ef6ca63354",
+      "contentSize": "733388340 B"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kagc-processed",
+      "name": "kagc/processed.zip",
+      "description": "Processed trajectories at KAGC.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kagc/processed.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "bc0ce9796545c69239a3c1d1dc97a77bb65ad3e2ea6cb055d8c8ba57465d2700",
+      "contentSize": "262019001 B"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kagc-raw-2021",
+      "name": "kagc/raw/2021.zip",
+      "description": "Raw ADS-B for 2021 at KAGC.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kagc/raw/2021.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "9a7efd163c99f1245d759ec78b3bfe2265ce652703672b73e3a987a84652583c",
+      "contentSize": "38015073 B"
+    },
+    {
+      "@type": "cr:FileObject",
+      "@id": "adsb-kagc-raw-2022",
+      "name": "kagc/raw/2022.zip",
+      "description": "Raw ADS-B for 2022 at KAGC.",
+      "contentUrl": "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330/tartanaviation-adsb/kagc/raw/2022.zip",
+      "encodingFormat": "application/zip",
+      "sha256": "3e94a0e1f1ee7db7e0180fa01690f9e88340312a3e6cb2744844f975221a109b",
+      "contentSize": "236594743 B"
+    },
+    {
+      "@type": "cr:FileSet",
+      "@id": "adsb-raw-csv",
+      "name": "adsb-raw-csv",
+      "containedIn": [
+        {
+          "@id": "adsb-kbtp-raw-2020"
+        },
+        {
+          "@id": "adsb-kbtp-raw-2021"
+        },
+        {
+          "@id": "adsb-kbtp-raw-2022"
+        },
+        {
+          "@id": "adsb-kagc-raw-2021"
+        },
+        {
+          "@id": "adsb-kagc-raw-2022"
+        }
+      ],
+      "encodingFormat": "text/csv",
+      "includes": "*/*.csv",
+      "description": "Raw ADS-B messages, one folder per day (MM-DD-YY), one or more CSVs per day. Columns: ID (ICAO 24-bit address as an integer), Time and Date (Python 2 list reprs, e.g. \"[u'07', u'00', u'01.08']\"), Altitude (ft), Speed (kt), Heading (deg), Lat, Lon, Age (s), Range (km from the receiver), Bearing (deg), Tail (broadcast callsign: the N-number for most general aviation, a flight number for airlines), AltisGNSS. The 2022 archives use Deflate64."
+    },
+    {
+      "@type": "cr:FileSet",
+      "@id": "adsb-processed-txt",
+      "name": "adsb-processed-txt",
+      "containedIn": [
+        {
+          "@id": "adsb-kbtp-processed"
+        },
+        {
+          "@id": "adsb-kagc-processed"
+        }
+      ],
+      "encodingFormat": "text/plain",
+      "includes": "processed/*.txt",
+      "description": "Processed scenes, one file per scene. Headerless CSV with columns Frame, ID, x, y, z, Headwind, Crosswind: Frame in seconds (1 Hz), ID the ICAO address, x/y/z in km in the runway frame, wind components in m/s."
+    }
+  ],
+  "recordSet": [
+    {
+      "@type": "cr:RecordSet",
+      "@id": "vision-videos",
+      "name": "vision-videos",
+      "description": "The 550 KAGC vision videos with per-video weather; use vision/download.py to fetch them.",
+      "key": {
+        "@id": "vision-videos/video_name"
+      },
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/video_name",
+          "name": "video_name",
+          "description": "Video name, <n>_<YYYY-MM-DD-HH-MM-SS> (recording start).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "video_name"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/aircraft",
+          "name": "aircraft",
+          "description": "Number of aircraft labelled in the video.",
+          "dataType": "sc:Integer",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "aircraft"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/visibility",
+          "name": "visibility",
+          "description": "Visibility in statute miles (METAR).",
+          "dataType": "sc:Float",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "visibility"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/sky_cover_l1",
+          "name": "sky_cover_l1",
+          "description": "Lowest sky-cover layer: CLR, FEW, SCT, BKN or OVC.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "sky_cover_l1"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/rain",
+          "name": "rain",
+          "description": "TRUE if rain was reported.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "rain"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/snow",
+          "name": "snow",
+          "description": "TRUE if snow was reported.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "snow"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "vision-videos/mist",
+          "name": "mist",
+          "description": "TRUE if mist was reported.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "vision-weather-stats"
+            },
+            "extract": {
+              "column": "mist"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "weather-kagc",
+      "name": "weather-kagc",
+      "description": "METAR observations.",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kagc/station",
+          "name": "station",
+          "description": "Station identifier.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-agc"
+            },
+            "extract": {
+              "column": "station"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kagc/valid",
+          "name": "valid",
+          "description": "Observation time, UTC (YYYY-MM-DD HH:MM).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-agc"
+            },
+            "extract": {
+              "column": "valid"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kagc/sknt",
+          "name": "sknt",
+          "description": "Wind speed in knots; M if missing.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-agc"
+            },
+            "extract": {
+              "column": "sknt"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kagc/drct",
+          "name": "drct",
+          "description": "Wind direction in degrees; M if missing.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-agc"
+            },
+            "extract": {
+              "column": "drct"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kagc/vsby",
+          "name": "vsby",
+          "description": "Visibility in statute miles; M if missing.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-agc"
+            },
+            "extract": {
+              "column": "vsby"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kagc/metar",
+          "name": "metar",
+          "description": "Raw METAR string.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-agc"
+            },
+            "extract": {
+              "column": "metar"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@type": "cr:RecordSet",
+      "@id": "weather-kbtp",
+      "name": "weather-kbtp",
+      "description": "METAR observations.",
+      "field": [
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kbtp/station",
+          "name": "station",
+          "description": "Station identifier.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-btp"
+            },
+            "extract": {
+              "column": "station"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kbtp/valid",
+          "name": "valid",
+          "description": "Observation time, UTC (YYYY-MM-DD HH:MM).",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-btp"
+            },
+            "extract": {
+              "column": "valid"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kbtp/sknt",
+          "name": "sknt",
+          "description": "Wind speed in knots; M if missing.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-btp"
+            },
+            "extract": {
+              "column": "sknt"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kbtp/drct",
+          "name": "drct",
+          "description": "Wind direction in degrees; M if missing.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-btp"
+            },
+            "extract": {
+              "column": "drct"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kbtp/vsby",
+          "name": "vsby",
+          "description": "Visibility in statute miles; M if missing.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-btp"
+            },
+            "extract": {
+              "column": "vsby"
+            }
+          }
+        },
+        {
+          "@type": "cr:Field",
+          "@id": "weather-kbtp/metar",
+          "name": "metar",
+          "description": "Raw METAR string.",
+          "dataType": "sc:Text",
+          "source": {
+            "fileObject": {
+              "@id": "weather-btp"
+            },
+            "extract": {
+              "column": "metar"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
