@@ -12,7 +12,11 @@
 
 This repository contains the scripts and documentation for downloading and analyzing the TartanAviation datasets.
 
-Please refer to the README files in the `vision`, `audio`, and `traj` sub-folders for information regarding the respective modalities.
+Please refer to the README files in the `vision`, `audio`, and `adsb` sub-folders for information regarding the respective modalities.
+
+## Contact
+
+For questions about the dataset, please contact Sebastian Scherer ([basti@andrew.cmu.edu](mailto:basti@andrew.cmu.edu)).
 
 ## Citation
 

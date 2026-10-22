@@ -155,7 +155,7 @@ if args.option == 'Date_Range' or args.option == 'All':
             end_month = int(end_date.split('-')[1]) if year == int(end_date.split('-')[0]) else 12
             for month in range(start_month, end_month+1):
                 for day in range(1, 32):
-                    audio_path = f'{location}/{year}/{month:02d}/{month:02d}-{day:02d}-{str(year)[-2:]}_audio'
+                    audio_path = f'{location}/{year}/{month}/{month:02d}-{day:02d}-{str(year)[-2:]}_audio'
                     download_file_from_bucket(client, bucket_name, args.save_dir, audio_path)
 elif args.option == 'Sample':
     sample_audio_path = 'kbtp/2020/11/11-02-20_audio'
