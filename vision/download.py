@@ -11,160 +11,94 @@ LICENSE file in the root directory of this source tree.
 import argparse
 import csv
 import os
-import boto3
-from botocore import UNSIGNED
-from botocore.config import Config
-from botocore.exceptions import ClientError
+import shutil
+import subprocess
+import sys
+import zipfile
 
-def download_vision_folder(client, bucket_name, save_dir, download_file):
-    # Check if file exists on the bucket
-    try:
-        stat = client.head_object(Bucket=bucket_name, Key=download_file)
-    except ClientError as err:
-        if err.response.get("Error", {}).get("Code", "") == "NoSuchKey":
-            print(f"Object {download_file} does not exist.")
-            print(f"An error occurred: {err}")
-            print("Please open a Github Issue.")
-            return 1
-        else:
-            print(f'Failed to lookup {download_file}')
-            print(f"An error occurred: {err}")
-            return 1
-    
-    # Make save directory
-    os.makedirs(save_dir, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, '..'))
+import ta_download  # noqa: E402
 
-    # Download zip file to save directory
-    try:
-        response = client.get_object(Bucket=bucket_name, Key=download_file)
-        with open(os.path.join(save_dir, download_file), 'wb') as f:
-            for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
-    except ClientError as err:
-        # Exit if download fails
-        print(f'Failed to download {download_file}')
-        print(f"An error occurred: {err}")
-        return 1
+BUCKET = 'tartanaviation-vision'
+SAMPLE = '1_2023-02-22-15-21-49'
 
-    return 0
 
-parser = argparse.ArgumentParser(description='Download TartanAviation Vision KAGC Dataset')
-parser.add_argument('--save_dir', type=str, default='./data', help='Directory to save the dataset')
-parser.add_argument('--option', type=str, required=True, choices=['Sample', 'All', 'Weather_Type', 'Visibility', 'Sky_Cover'], help='Download option based on property')
-parser.add_argument('--threshold', type=float, default=5, help='Visibility Threshold')
-parser.add_argument('--weather', type=str, default='Snow', choices=['Snow', 'Rain', 'Mist'], help='Weather Type')
-parser.add_argument('--sky_cover', type=str, default='CLR', choices=['CLR', 'BKN', 'SCT', 'FEW', 'OVC'], help='Sky Cover Type')
-parser.add_argument('--extract_frames', action='store_true', help='Extract individual frames from MP4 video')
-parser.add_argument('--visualize_frames', action='store_true', help='Extract visualized dataset labels as individual frames')
-args = parser.parse_args()
+def select_videos(args):
+    '''Pick video names from weather_stats.csv according to --option.'''
+    if args.option == 'Sample':
+        return [SAMPLE]
+    with open(os.path.join(HERE, 'weather_stats.csv'), newline='') as f:
+        rows = list(csv.DictReader(f))
+    if args.option == 'All':
+        keep = rows
+    elif args.option == 'Weather_Type':
+        keep = [r for r in rows if r[args.weather.lower()] == 'TRUE']
+    elif args.option == 'Visibility':
+        keep = [r for r in rows if float(r['visibility']) <= args.threshold]
+    else:  # Sky_Cover
+        keep = [r for r in rows if r['sky_cover_l1'] == args.sky_cover]
+    return [r['video_name'] for r in keep]
 
-# Print the selected option
-print(f'Selected Option: {args.option}')
-# Print the selected values for weather type, visibility threshold and sky cover
-if args.option == 'Weather_Type':
-    print(f'Selected Weather Type: {args.weather}')
-elif args.option == 'Visibility':
-    print(f'Selected Visibility Threshold: {args.threshold}')
-elif args.option == 'Sky_Cover':
-    print(f'Selected Sky Cover: {args.sky_cover}')
 
-# Read weather_stats.csv file
-with open('./weather_stats.csv', 'r') as f:
-    reader = csv.reader(f)
-    next(reader)  # skip header
-    video_folders = []
-    for row in reader:
-        video_name, aircraft, visibility, mist, fog, haze, sky_cover_l1, cloud_height_l1, rain, snow = row
-        # Download single sample folder
-        if args.option == 'Sample':
-            sample_video_name = '1_2023-02-22-15-21-49'
-            video_folders.append(sample_video_name)
-            break
-        # Download all video folders
-        elif args.option == 'All':
-            video_folders.append(video_name)
-        # Download video folders based on weather type
-        elif args.option == 'Weather_Type':
-            if args.weather == 'Snow' and snow == "TRUE":
-                video_folders.append(video_name)
-            elif args.weather == 'Rain' and rain == "TRUE":
-                video_folders.append(video_name)
-            elif args.weather == 'Mist' and mist == "TRUE":
-                video_folders.append(video_name)
-        # Download video folders based on visibility threshold
-        elif args.option == 'Visibility' and float(visibility) <= args.threshold:
-            video_folders.append(video_name)
-        # Download video folders based on sky cover
-        elif args.option == 'Sky_Cover' and sky_cover_l1 == args.sky_cover:
-            video_folders.append(video_name)
+def extract_frames(video_path, frame_dir):
+    '''Split a video into <frame_dir>/<n>.png at 24 fps, numbered from 2 to match the labels.'''
+    marker = os.path.join(frame_dir, '.frames_complete')  # absent if a previous run was interrupted
+    if os.path.exists(marker):
+        return True
+    os.makedirs(frame_dir, exist_ok=True)
+    cmd = ['ffmpeg', '-y', '-loglevel', 'error', '-stats', '-i', video_path, '-vf', 'fps=24', '-start_number', '2',
+           os.path.join(frame_dir, '%d.png')]
+    if subprocess.run(cmd).returncode != 0:
+        print(f'  Failed to extract frames from {video_path}')
+        return False
+    open(marker, 'w').close()
+    return True
 
-# Print number of video folders
-print(f'Number of Video Folders: {len(video_folders)}')
 
-# Create Save Directory
-if not os.path.exists(args.save_dir):
-    os.makedirs(args.save_dir, exist_ok=True)
+def main():
+    parser = argparse.ArgumentParser(description='Download TartanAviation Vision KAGC Dataset')
+    ta_download.add_common_args(parser)
+    parser.add_argument('--option', type=str, required=True, choices=['Sample', 'All', 'Weather_Type', 'Visibility', 'Sky_Cover'],
+                        help='Download option based on property')
+    parser.add_argument('--threshold', type=float, default=5, help='Visibility threshold in statute miles (with --option Visibility)')
+    parser.add_argument('--weather', type=str, default='Snow', choices=['Snow', 'Rain', 'Mist'], help='Weather type (with --option Weather_Type)')
+    parser.add_argument('--sky_cover', type=str, default='CLR', choices=['CLR', 'BKN', 'SCT', 'FEW', 'OVC'], help='Sky cover (with --option Sky_Cover)')
+    parser.add_argument('--extract_frames', action='store_true', help='Extract individual frames from MP4 video')
+    parser.add_argument('--visualize_frames', action='store_true', help='Extract visualized dataset labels as individual frames')
+    args = parser.parse_args()
 
-# Define Base URL for download
-endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"  
-bucket_name = "tartanaviation-vision"
+    if (args.extract_frames or args.visualize_frames) and not args.dry_run and shutil.which('ffmpeg') is None:
+        sys.exit('--extract_frames / --visualize_frames need ffmpeg on your PATH (https://ffmpeg.org/).')
 
-client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
+    videos = select_videos(args)
+    print(f'Selected {len(videos)} video(s).')
+    objects = ta_download.list_objects(BUCKET)
 
-# Download video folders using wget
-for folder in video_folders:
-    # Check if folder already exists
-    if not os.path.exists(os.path.join(args.save_dir, folder)):
-        download_file = f'{folder}.zip'
-        
-        # Remove zip file if it already exists
-        if os.path.exists(os.path.join(args.save_dir, download_file)):
-            os.system(f'rm {os.path.join(args.save_dir, download_file)}')
-        
-        # Download zip file to save directory
-        download_fail = download_vision_folder(client, bucket_name, args.save_dir, download_file)
+    # Each video is extracted into <save_dir>/<video>/
+    jobs = []
+    for name in videos:
+        local = os.path.join(args.save_dir, name)
+        jobs.append(ta_download.Job(f'{name}.zip', objects[f'{name}.zip'], f'{local}.zip', extract_to=local, flatten=True))
+    for job in ta_download.run(BUCKET, jobs, args.save_dir, args.dry_run):
+        labels = os.path.join(job.extract_to, f'{os.path.basename(job.extract_to)}_labels.zip')
+        if os.path.exists(labels):
+            with zipfile.ZipFile(labels) as zf:
+                zf.extractall(job.extract_to)
+    if args.dry_run:
+        return
 
-        # Unzip the downloaded file
-        if download_fail == 0:
-            unzip_fail = os.system(f'unzip {os.path.join(args.save_dir, folder)}.zip -d {args.save_dir}')
-            # Remove the zip file
-            if unzip_fail == 0:
-                os.system(f'rm {os.path.join(args.save_dir, folder)}.zip*')
-                # Unzip the labels zip file
-                os.system(f'unzip {os.path.join(args.save_dir, folder, f"{folder}_labels.zip")} -d {os.path.join(args.save_dir, folder)}')
-            else:
-                print(f'Please download Unzip')
-                break
-        # Exit if download fails
-        elif download_fail != 0:
-            print(f'Failed to download {folder}')
-            break
-    # Skip download if folder already exists
-    else:
-        print(f'{folder} already exists in {args.save_dir}')
-    
-    # Check if sink folder already exists
-    if args.extract_frames:
-        # Convert MP4 video to PNG frames if no png frames exist
-        sample_frame_name = os.path.join(args.save_dir, folder, f'{folder}_sink', '2.png')
-        if not os.path.exists(sample_frame_name):
-            video_path = os.path.join(args.save_dir, folder, f'{folder}.mp4')
-            frame_save_dir = os.path.join(args.save_dir, folder, f'{folder}_sink')
-            os.makedirs(frame_save_dir, exist_ok=True)
-            ret = os.system(f'ffmpeg -i {video_path} -vf "fps=24" -start_number 2 {os.path.join(frame_save_dir, "%d.png")}')
-            if ret != 0:
-                print(f'Failed to extract frames from {video_path}')
-                break
-
-    # Check if visualization folder already exists
-    if not os.path.exists(os.path.join(args.save_dir, folder, f'{folder}_sink_verified')):
-        # Convert Visualized Videos to PNG frames
+    for name in videos:
+        folder = os.path.join(args.save_dir, name)
+        if not os.path.isdir(folder):
+            continue
+        if args.extract_frames:
+            print(f'Extracting frames: {name}')
+            extract_frames(os.path.join(folder, f'{name}.mp4'), os.path.join(folder, f'{name}_sink'))
         if args.visualize_frames:
-            video_path = os.path.join(args.save_dir, folder, f'{folder}_sink_verified.avi')
-            frame_save_dir = os.path.join(args.save_dir, folder, f'{folder}_vis_sink')
-            os.makedirs(frame_save_dir, exist_ok=True)
-            ret = os.system(f'ffmpeg -i {video_path} -vf "fps=24" -start_number 2 {os.path.join(frame_save_dir, "%d.png")}')
-            if ret != 0:
-                print(f'Failed to extract label visualization frames from {video_path}')
-                break
+            print(f'Extracting label visualization frames: {name}')
+            extract_frames(os.path.join(folder, f'{name}_sink_verified.avi'), os.path.join(folder, f'{name}_vis_sink'))
+
+
+if __name__ == '__main__':
+    main()

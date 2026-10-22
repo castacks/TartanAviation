@@ -1,0 +1,14 @@
+# The download scripts (*/download.py) need only the Python standard library (>= 3.8).
+# These are for the processing and analysis code.
+
+# adsb/process.py, adsb/getWindVelocity.py
+numpy
+pandas
+scipy
+geographiclib
+metar
+
+# vision/dataloader.py
+natsort
+opencv-python
+torch

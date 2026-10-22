@@ -1,35 +1,222 @@
+# TartanAviation
 
-# TartanAviation: Vision, Speech, and ADS-B Trajectory Datasets for Terminal Airspace Operations
+**Image, speech, and ADS-B trajectory datasets for terminal airspace operations**
 
+[![Paper](https://img.shields.io/badge/Scientific%20Data-2025-1f6feb)](https://doi.org/10.1038/s41597-025-04775-6)
+[![arXiv](https://img.shields.io/badge/arXiv-2403.03372-b31b1b)](https://arxiv.org/abs/2403.03372)
+[![Website](https://img.shields.io/badge/website-theairlab.org-2ea44f)](https://theairlab.org/tartanaviation/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14699102.svg)](https://doi.org/10.5281/zenodo.14699102)
+[![Data license](https://img.shields.io/badge/data-CC%20BY%204.0-ef9421)](https://creativecommons.org/licenses/by/4.0/)
+[![Code license](https://img.shields.io/badge/code-BSD--3--Clause-lightgrey)](LICENSE)
 
-[Paper Link](http://arxiv.org/abs/2403.03372) | [Website Link](https://theairlab.org/tartanaviation/)
 <p align="center">
-  <a href="">
-    <img src="abstract.png" alt="Logo" width="100%">
-  </a>
+  <img src="abstract.png" alt="TartanAviation overview" width="100%">
 </p>
 
-This repository contains the scripts and documentation for downloading and analyzing the TartanAviation datasets.
+TartanAviation is an open, multi-modal dataset of terminal-area airspace operations, recorded with sensors installed inside the boundaries of two airports near Pittsburgh, PA:
 
-Please refer to the README files in the `vision`, `audio`, and `adsb` sub-folders for information regarding the respective modalities.
+- **KAGC**, Allegheny County Airport, a towered airport
+- **KBTP**, Pittsburgh-Butler Regional Airport, a non-towered airport
+
+Collection ran from 2020 to 2023, across seasons, weather and traffic conditions. All data has been filtered and validated.
+
+| Modality | What you get | Airports | Download size |
+|---|---|---|---|
+| 🎥 [**Vision**](#vision) | ~3.1M images in 550 videos, with aircraft bounding boxes labelled with flight ID, range and aircraft type; synchronized ADS-B; per-video weather | KAGC | 3.5 TB |
+| 🎙️ [**Speech**](#speech) | ~3,374 hours of ATC radio in 677 daily archives, with per-clip metadata; raw recordings also available | KAGC, KBTP | 543 GB, plus 676 GB raw |
+| ✈️ [**ADS-B**](#ads-b) | 661 days of aircraft trajectories, raw and processed | KAGC, KBTP | 2 GB |
+| 🌦️ [**Weather**](#weather) | METAR reports for 2020 to 2022 | KAGC, KBTP | in repo |
+
+**Contents:** [Quick start](#quick-start) · [Vision](#vision) · [Speech](#speech) · [ADS-B](#ads-b) · [Weather](#weather) · [Repository layout](#repository-layout) · [Contact](#contact) · [Citation](#citation) · [License](#license)
+
+## Quick start
+
+The download scripts use only the Python standard library (Python ≥ 3.8), so there is nothing to install.
+
+```sh
+git clone https://github.com/castacks/TartanAviation.git
+cd TartanAviation
+
+python3 vision/download.py --option Sample   # 2.0 GB: one KAGC video with labels
+python3 audio/download.py  --option Sample   # 315 MB: one day of KBTP ATC audio
+python3 adsb/download.py   --option Sample   # 733 MB: one year of raw KBTP ADS-B
+```
+
+Every script supports the following:
+
+- **`--dry_run`** lists the files and total size before you commit disk space to a multi-terabyte download.
+- **Resuming:** rerun the same command after an interruption and it skips finished files and resumes partial ones.
+- **`--save_dir DIR`** sets the download location. The default is `./data`.
+
+A few archives use Deflate64, which Python can't decompress; the scripts extract those with the system `unzip` (`sudo apt install unzip`). The analysis code (`adsb/process.py`, `vision/dataloader.py`) has its own dependencies, listed in [`requirements.txt`](requirements.txt).
+
+---
+
+<a id="vision"></a>
+
+## 🎥 Vision
+
+About 3.1M images from 550 videos recorded at KAGC between June 2022 and February 2023. Each video comes with aircraft bounding-box labels, synchronized ADS-B and a weather summary. The download is 3.5 TB; extracting every frame to PNG takes about 22 TB.
+
+```sh
+python3 vision/download.py --option Weather_Type --weather Rain --dry_run
+```
+
+Videos are selected using [`vision/weather_stats.csv`](vision/weather_stats.csv), which records the aircraft count, visibility, sky cover and weather for each video:
+
+| `--option` | Downloads | Videos | Size |
+|---|---|---|---|
+| `Sample` | `1_2023-02-22-15-21-49` | 1 | 2.0 GB |
+| `Weather_Type --weather {Snow,Rain,Mist}` | Videos with that weather | 5 / 28 / 2 | |
+| `Visibility --threshold MILES` | Videos with visibility ≤ the threshold (default 5) | | |
+| `Sky_Cover --sky_cover {CLR,FEW,SCT,BKN,OVC}` | Videos with that lowest cloud layer | | |
+| `All` | Everything | 550 | 3.5 TB |
+
+Use `--dry_run` to see the video count and size for any option.
+
+- **`--extract_frames`:** split each video into `<video>_sink/<n>.png` at 24 fps, alongside the labels. Needs [ffmpeg](https://ffmpeg.org/).
+- **`--visualize_frames`:** also split the label-overlay video into `<video>_vis_sink/`.
+- **Interrupted extraction:** a run stopped partway restarts on the next run.
+
+Each video is named `<n>_<YYYY-MM-DD-HH-MM-SS>` after its recording start time:
+
+```
+data/
+└── 1_2023-02-22-15-21-49/
+    ├── 1_2023-02-22-15-21-49.mp4                 video
+    ├── 1_2023-02-22-15-21-49_sink/
+    │   ├── 2.png, 3.png, ...                     frames (--extract_frames)
+    │   └── <n>.label                             bounding boxes for frame n
+    ├── 1_2023-02-22-15-21-49_sink_verified.avi   video with labels drawn on
+    ├── 1_2023-02-22-15-21-49_sink_adsb.pkl       ADS-B synchronized to the video
+    ├── 1_2023-02-22-15-21-49_acft_sink.pkl
+    ├── 1_2023-02-22-15-21-49_subtitle.srt
+    └── 1_2023-02-22-15-21-49_labels.zip          the .label files, as downloaded
+```
+
+Each line of a `.label` file is `x1 y1 x2 y2 flight_id distance manufacturer model type`.
+
+**PyTorch dataloader:** [`vision/dataloader.py`](vision/dataloader.py) provides `KAGC`, a `torch.utils.data.Dataset` that yields sequences of grayscale frames with their boxes and metadata. Run `--extract_frames` first.
+
+---
+
+<a id="speech"></a>
+
+## 🎙️ Speech
+
+About 3,374 hours of air traffic control radio recorded at KAGC (October 2021 to February 2023) and KBTP (September 2020 to September 2022). It ships as 677 daily archives, 543 GB compressed and about 2.15 TB uncompressed. The unprocessed recordings are also available (676 GB).
+
+```sh
+python3 audio/download.py --option Date_Range --start_date 2022-06 --end_date 2022-08 --location kagc --dry_run
+```
+
+| `--option` | Downloads | Size |
+|---|---|---|
+| `Sample` | One day at KBTP (2020-11-02), 13 clips | 315 MB |
+| `Date_Range` | Every day from `--start_date` to `--end_date`, inclusive (`YYYY-MM`) | varies |
+| `All` | Every day at both airports | 543 GB |
+| `Raw` | Unprocessed recordings in two-month archives, kept zipped | 676 GB |
+
+`--location {kbtp,kagc,Both}` picks the airport; the default is `Both`. Each clip is a `.wav` file with a `.txt` metadata file of the same number. Month folders are not zero-padded, which matches the bucket:
+
+```
+data/
+└── kbtp/
+    └── 2020/
+        └── 11/
+            └── 11-02-20_audio/
+                ├── 1.txt
+                ├── 1.wav
+                ├── ...
+                └── 15.wav
+```
+
+**Filtering and analysis:** [`audio/filter.sh`](audio/filter.sh) and [`audio/analysis.sh`](audio/analysis.sh) were used to filter the raw recordings and measure speech versus silence; both need `ffmpeg`. Example output is in [`audio/analysis_output.txt`](audio/analysis_output.txt).
+
+---
+
+<a id="ads-b"></a>
+
+## ✈️ ADS-B
+
+661 days of ADS-B aircraft trajectories recorded at KAGC (2021–2022) and KBTP (2020–2022). The data is 2 GB compressed and about 12 GB uncompressed.
+
+```sh
+python3 adsb/download.py --option Processed --location kagc
+```
+
+| `--option` | Downloads | Size |
+|---|---|---|
+| `Sample` | Raw KBTP data for 2022 | 733 MB |
+| `Processed` | Filtered trajectories for each airport | 607 MB |
+| `Raw` | Raw yearly archives for each airport | 1.4 GB |
+| `All` | `Processed` + `Raw` | 2.0 GB |
+
+`--location {kbtp,kagc,Both}` picks the airport; the default is `Both`.
+
+```
+data/
+├── kbtp/
+│   ├── processed/
+│   │   ├── 1.txt
+│   │   └── ...
+│   └── raw/
+│       ├── 2020/
+│       ├── 2021/
+│       └── 2022/
+│           ├── 01-01-22/
+│           │   └── 1.csv
+│           └── ...
+└── kagc/
+    └── ...
+```
+
+**Processing:** [`adsb/process.py`](adsb/process.py) filters and processes the raw CSVs into trajectories, using the METAR data in [`weather/`](weather/) to express wind in the runway frame.
+
+---
+
+<a id="weather"></a>
+
+## 🌦️ Weather
+
+[`weather/AGC.csv`](weather/AGC.csv) and [`weather/BTP.csv`](weather/BTP.csv) hold METAR reports for KAGC and KBTP from 2020 to 2022. They were downloaded from the [Iowa Environmental Mesonet](https://mesonet.agron.iastate.edu/request/download.phtml) at Iowa State University and use its ASOS export columns.
+
+---
+
+## Repository layout
+
+```
+vision/          download script, PyTorch dataloader, weather_stats.csv, camera recorder
+audio/           download script, filter/analysis scripts, radio recorder
+adsb/            download script, trajectory processing, ADS-B recorder
+weather/         METAR CSVs for KAGC and KBTP
+ta_download.py   shared download helper used by the three download.py scripts
+```
+
+Each modality's `recording/` folder holds the code that ran on the sensors at the airports.
 
 ## Contact
 
-For questions about the dataset, please contact Sebastian Scherer ([basti@andrew.cmu.edu](mailto:basti@andrew.cmu.edu)).
+For questions about the dataset, please contact Sebastian Scherer ([basti@andrew.cmu.edu](mailto:basti@andrew.cmu.edu)). For bugs in the scripts, please [open an issue](https://github.com/castacks/TartanAviation/issues).
 
 ## Citation
 
-If you find this dataset helpful, please cite the following work:
+If you find this dataset helpful, please cite:
 
-```
-@article{patrikar2024tartanaviation,
-	title={TartanAviation: Image, Speech, and ADS-B Trajectory Datasets for Terminal Airspace Operations}, 
-	author={Jay Patrikar and Joao Dantas and Brady Moon and Milad Hamidi and Sourish Ghosh and Nikhil Keetha and Ian Higgins and Atharva Chandak and Takashi Yoneyama and Sebastian Scherer},
-	year={2024},
-	eprint={2403.03372},
-	archivePrefix={arXiv},
-	primaryClass={cs.LG},
-	url={https://arxiv.org/pdf/2403.03372.pdf}
+```bibtex
+@article{patrikar2025tartanaviation,
+  title   = {Image, speech, and {ADS-B} trajectory datasets for terminal airspace operations},
+  author  = {Patrikar, Jay and Dantas, Joao and Moon, Brady and Hamidi, Milad and Ghosh, Sourish and Keetha, Nikhil and Higgins, Ian and Chandak, Atharva and Yoneyama, Takashi and Scherer, Sebastian},
+  journal = {Scientific Data},
+  volume  = {12},
+  number  = {1},
+  pages   = {468},
+  year    = {2025},
+  doi     = {10.1038/s41597-025-04775-6}
 }
 ```
+
+## License
+
+- **Data:** the TartanAviation dataset (vision, speech, ADS-B and weather data) is released under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/). You may share and adapt it for any purpose, including commercial use, provided you give appropriate credit by citing the paper above.
+- **Code:** the code in this repository is released under the [BSD 3-Clause License](LICENSE).

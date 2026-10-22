@@ -10,177 +10,66 @@ LICENSE file in the root directory of this source tree.
 
 import argparse
 import os
-import boto3
-from botocore import UNSIGNED
-from botocore.config import Config
-from botocore.exceptions import ClientError
+import re
+import sys
 
-def download_file_from_bucket(client, bucket_name, save_dir, audio_path):
-    # get the file name of audio_path
-    audio_name = os.path.basename(audio_path)
-    audio_save_path = os.path.join(args.save_dir, audio_path)
-    # Check if folder already exists
-    if not os.path.exists(audio_save_path):
-        download_file = f'{audio_path}.zip'
-        download_dest = f'{save_dir}/{audio_name}.zip'
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+import ta_download  # noqa: E402
 
-        # Check if file exists
-        try:
-            client.head_object(Bucket=bucket_name, Key=download_file)
-        except ClientError as err:
-            code = err.response.get("Error", {}).get("Code", "")
-            # Common "not found" codes across S3-compatible backends
-            if code in ("404", "NoSuchKey", "NotFound"):
-                # print("Object does not exist.")
-                return
-            else:
-                print(f'Failed to lookup {audio_path}')
-                print(f"An error occurred: {err}")
-                return
-        
-        # Make directory
-        os.makedirs(audio_save_path, exist_ok=True)
+BUCKET = 'tartanaviation-audio'
+SAMPLE = 'kbtp/2020/11/11-02-20_audio.zip'
+# Daily archives: <location>/<year>/<month, not zero-padded>/<MM-DD-YY>_audio.zip
+DAILY = re.compile(r'^(kbtp|kagc)/(\d{4})/(\d{1,2})/\d{2}-\d{2}-\d{2}_audio\.zip$')
 
-        # Download zip file to save directory
-        try:
-            response = client.get_object(Bucket=bucket_name, Key=download_file)
-            with open(download_dest, 'wb') as f:
-                for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
-                    if chunk:
-                        f.write(chunk)
-        except ClientError as err:
-            # Exit if download fails
-            print(f'Failed to download {audio_path}')
-            print(f"An error occurred: {err}")
-            return
 
-        # Unzip the downloaded file
-        ret = os.system(f'unzip -j {os.path.join(save_dir, audio_name)}.zip -d {audio_save_path}')
-        # Remove the zip file
-        if ret == 0:
-            os.system(f'rm {os.path.join(save_dir, audio_name)}.zip*')
+def year_month(text):
+    try:
+        year, month = (int(x) for x in text.split('-'))
+        assert 1 <= month <= 12
+    except (ValueError, AssertionError):
+        raise argparse.ArgumentTypeError(f'expected YYYY-MM, got {text!r}')
+    return year, month
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Download TartanAviation Audio Dataset')
+    ta_download.add_common_args(parser)
+    parser.add_argument('--option', type=str, required=True, choices=['Sample', 'All', 'Date_Range', 'Raw'],
+                        help='Sample: one day at KBTP. All: every day. Date_Range: days between --start_date '
+                             'and --end_date. Raw: unprocessed two-month recordings')
+    parser.add_argument('--location', type=str, default='Both', choices=['kbtp', 'kagc', 'Both'], help='Data airport location')
+    parser.add_argument('--start_date', type=year_month, default='2020-09', help='Start month, inclusive (YYYY-MM)')
+    parser.add_argument('--end_date', type=year_month, default='2023-02', help='End month, inclusive (YYYY-MM)')
+    args = parser.parse_args()
+
+    locations = ['kbtp', 'kagc'] if args.location == 'Both' else [args.location]
+
+    jobs = []
+    if args.option == 'Raw':
+        # Raw recordings are kept zipped: <save_dir>/Raw/<location>/<year>/<months>.zip
+        for location in locations:
+            for key, size in sorted(ta_download.list_objects(BUCKET, f'Raw/{location}/').items()):
+                jobs.append(ta_download.Job(key, size, os.path.join(args.save_dir, key)))
+    else:
+        if args.option == 'Sample':
+            keys = ta_download.list_objects(BUCKET, SAMPLE)
         else:
-            print(f'Please download Unzip (sudo apt install unzip)')
+            keys = {}
+            for location in locations:
+                for key, size in ta_download.list_objects(BUCKET, f'{location}/').items():
+                    match = DAILY.match(key)
+                    if not match:
+                        continue
+                    month = (int(match.group(2)), int(match.group(3)))
+                    if args.option == 'All' or args.start_date <= month <= args.end_date:
+                        keys[key] = size
+        # Each day is extracted into <save_dir>/<location>/<year>/<month>/<MM-DD-YY>_audio/
+        for key, size in sorted(keys.items()):
+            local = os.path.join(args.save_dir, key[:-len('.zip')])
+            jobs.append(ta_download.Job(key, size, f'{local}.zip', extract_to=local, flatten=True))
 
-    # Skip download if folder already exists
-    else:
-        print(f'{audio_path} already exists in {save_dir}')
-
-
-def download_raw_folder(client, bucket_name, save_dir, audio_path):
-    # get the file name of audio_path
-    audio_dir_path = os.path.join(save_dir, os.path.dirname(audio_path))
-    audio_name = os.path.basename(audio_path)
-    download_file_local = f'{save_dir}/{audio_path}.zip'
-    # Check if folder already exists
-    if not os.path.exists(download_file_local):
-        download_file = f'{audio_path}.zip'
-        download_dest = f'{audio_dir_path}/{audio_name}.zip'
-        
-        try:
-            stat = client.head_object(Bucket=bucket_name, Key=download_file)
-        except ClientError as err:
-            if err.response.get("Error", {}).get("Code", "") == "NoSuchKey":
-                # print("Object does not exist.")
-                return
-            else:
-                print(f'Failed to lookup {audio_path}')
-                print(f"An error occurred: {err}")
-                return
-            
-        # Make directory
-        os.makedirs(audio_dir_path, exist_ok=True)
-
-        # Download zip file to save directory
-        try:
-            response = client.get_object(Bucket=bucket_name, Key=download_file)
-            with open(download_dest, 'wb') as f:
-                for chunk in response['Body'].iter_chunks(chunk_size=1024 * 1024):
-                    if chunk:
-                        f.write(chunk)
-        except ClientError as err:
-            # Exit if download fails
-            print(f'Failed to download {audio_path}')
-            print(f"An error occurred: {err}")
-            return
-
-    # Skip download if folder already exists
-    else:
-        print(f'{download_file_local} already exists in {save_dir}')
-
-parser = argparse.ArgumentParser(description='Download TartanAviation Audio Dataset')
-parser.add_argument('--save_dir', type=str, default='./data', help='Directory to save the dataset')
-parser.add_argument('--option', type=str, required=True, choices=['Sample', 'All', 'Date_Range', 'Raw'], help='Download option based on property')
-parser.add_argument('--location', type=str, default='Both', choices=['kbtp', 'kagc', 'Both'], help='Data airport location')
-parser.add_argument('--start_date', type=str, default='2020-09', help='Start Date (YYYY-MM)')
-parser.add_argument('--end_date', type=str, default='2023-02', help='End Date (YYYY-MM)')
-args = parser.parse_args()
-
-# Print the selected option
-print(f'Selected Option: {args.option}')
-print(f'Selected Location: {args.location}')
-# Print the selected values for weather type, visibility threshold and sky cover
-if args.option == 'Date_Range':
-    print(f'Selected Start Date: {args.start_date}')
-    print(f'Selected End Date: {args.end_date}')
-
-# Create Save Directory
-if not os.path.exists(args.save_dir):
-    print("Creating save dir at",args.save_dir)
-    os.makedirs(args.save_dir, exist_ok=True)
+    ta_download.run(BUCKET, jobs, args.save_dir, args.dry_run)
 
 
-# Define Base URL for download
-endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"  
-bucket_name = "tartanaviation-audio"
-
-client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
-
-if args.option == 'Date_Range' or args.option == 'All':
-    start_date = '2020-09'
-    end_date = '2023-02'
-    if args.option == 'Date_Range':
-        start_date = args.start_date
-        end_date = args.end_date
-    # Go through each location
-    if args.location == 'Both':
-        locations = ['kbtp', 'kagc']
-    else:
-        locations = [args.location]
-
-    for location in locations:
-        # Go through each date in range
-        for year in range(int(start_date.split('-')[0]), int(end_date.split('-')[0])+1):
-            start_month = int(start_date.split('-')[1]) if year == int(start_date.split('-')[0]) else 1
-            end_month = int(end_date.split('-')[1]) if year == int(end_date.split('-')[0]) else 12
-            for month in range(start_month, end_month+1):
-                for day in range(1, 32):
-                    audio_path = f'{location}/{year}/{month}/{month:02d}-{day:02d}-{str(year)[-2:]}_audio'
-                    download_file_from_bucket(client, bucket_name, args.save_dir, audio_path)
-elif args.option == 'Sample':
-    sample_audio_path = 'kbtp/2020/11/11-02-20_audio'
-    download_file_from_bucket(client, bucket_name, args.save_dir, sample_audio_path)
-elif args.option == 'Raw':
-    raw_audio_paths = ['Raw/kbtp/2020/Sept-Oct',
-                      'Raw/kbtp/2020/Nov-Dec',
-                      'Raw/kbtp/2021/Jan-Feb',
-                      'Raw/kbtp/2021/Mar-Apr',
-                      'Raw/kbtp/2021/Nov-Dec',
-                      'Raw/kbtp/2022/Jan-Feb',
-                      'Raw/kbtp/2022/Mar-Apr',
-                      'Raw/kbtp/2022/May-Jun',
-                      'Raw/kbtp/2022/Jul-Aug',
-                      'Raw/kbtp/2022/Sept-Oct',
-                      'Raw/kagc/2021/Oct-Dec',
-                      'Raw/kagc/2022/Jan-Feb',
-                      'Raw/kagc/2022/Mar-Apr',
-                      'Raw/kagc/2022/May-Jun',
-                      'Raw/kagc/2022/Jul-Aug',
-                      'Raw/kagc/2022/Sept-Oct',
-                      'Raw/kagc/2022/Nov-Dec',
-                      'Raw/kagc/2023/Jan-Feb']
-    for audio_path in raw_audio_paths:
-        download_raw_folder(client, bucket_name, args.save_dir, audio_path)
-else:
-    print('Invalid option')
-print("Done!")
+if __name__ == '__main__':
+    main()
